@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='currentColor' d='M13,9a1,1,0,0,0-1-1H3A1,1,0,0,0,2,9V22H13ZM6,20H4V18H6Zm0-4H4V14H6Zm0-4H4V10H6Zm5,8H8V18h3Zm0-4H8V14h3Zm0-4H8V10h3Zm3.5-6H6V3A1,1,0,0,1,7,2H17a1,1,0,0,1,1,1v7H15V6.5A.5.5,0,0,0,14.5,6ZM22,13v9H19.5V18h-2v4H15V13a1,1,0,0,1,1-1h5A1,1,0,0,1,22,13Z'/%3E%3C/svg%3E"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SCience</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;500;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.0"></script>
+<style>
+.crane-container {
+position: relative; width: 100%; height: 200px;
+}
+.vertical-stick {
+position: absolute; left: 50%; transform: translateX(-50%); width: 20px; height: 150px; top:50px; background: #666;
+}
+.horizontal-stick {
+position: absolute; top: -10px; left: 50%; width: 200px; height: 20px; background: #444; border-radius: 5px; transform: translateX(-50%) rotate(0deg); cursor: grab; transition: transform 0.5s ease;
+}
+.horizontal-stick:active {
+cursor: grabbing; transition: none;
+}
+.base-crane {
+position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100px; height: 40px; background: #444; border-radius: 5px;
+}
+.rope-canvas {
+position: absolute; left: 0; width: 100%; top:50px; height: 75%; pointer-events: none;
+}
+.book {
+position: relative; display: flex; width: 450px; height: 200px; pointer-events: none; transform-style: preserve-3d; transition: translate 1s; translate: 0 0; rotate: 1 0 0 30deg; color: hsl(180 68% 5%); left: 85%;
+}
+.page {
+border-radius: .9em; --thickness: 4; display: flex; width: 100%; min-height: 100%; max-height: 100%; pointer-events: all; transform-style: preserve-3d; transform-origin: left center; 
+transition: transform 1s, rotate 1s ease-in calc((min(var(--i), var(--c)) - max(var(--i), var(--c))) * 50ms); translate: calc(var(--i) * -100%) 0px 0px; transform: translateZ(calc((var(--c) - var(--i) - 0.5) * 0.92px));
+rotate: 0 1 0 calc(clamp(0, var(--c) - var(--i), 1) * -180deg);
+}
+.front,.back {
+position: relative; flex: none; width: 100%; backface-visibility: hidden; overflow: hidden; background-color: #ebeced;
+}
+.back {
+translate: -100% 0; rotate: 0 1 0 180deg;
+}
+.page {
+box-shadow: 0em .5em 1em -.2em #00000020;
+}
+.front,.back {
+  border: 1px solid #0002;
+  &::after {
+    position: absolute;
+    bottom: 1em;
+  }
+}
+.front {
+  &::after {
+    right: 1em;
+  }
+  background: linear-gradient(to left, #f7f7f7 80%, #eee 100%);
+  border-radius: .1em .9em .9em .1em;
+}
+.back {
+  &::after {
+    left: 1em;
+  }
+  background-image: linear-gradient(to right, #f7f7f7 80%, #eee 100%);
+  border-radius: .9em .1em .1em .9em;
+}
+.cover {
+  background: radial-gradient(circle farthest-corner at 80% 20%, hsl(150 80% 20% / .3) 0%, hsl(170 60% 10% / .1) 100%),
+    hsl(231, 32%, 29%);
+  color: hsl(200 30% 98%);
+}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+html, body {
+overflow-x: hidden; width: 100%; max-width: 100%;
+}
+a {
+text-decoration: unset; -webkit-box-shadow: unset; box-shadow: unset; color: unset;
+        }
+body {
+min-height: 100vh; display: flex; flex-direction: column; line-height: 1.6;
+        }
+        main, footer {
+            font-size: max(16px, 2vh);
+        }
+        p {
+            font-weight: 500;
+        }
+                #player {
+            display: none;
+        }
+        .team-member-row {
+            cursor: pointer;
+        }
+        .audio-trigger {
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+ #results {
+        width: 100%;
+        margin: 5vh 0;
+    }
+    .results-header {
+        width: 100%;
+        text-align: center;
+        padding: 20px 0;
+        font-weight: bold;
+    }
+    .results-row {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        width: 100%;
+        gap: 20px;
+    }
+    .result-item {
+        flex: 1;
+        min-width: 300px;
+        max-width: 30%;
+        padding: 15px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+.result-item .answer {
+    margin-top: auto;
+}
+    .result-item img {
+        max-width: 200px;
+        height: auto;
+        margin: 0 auto;
+        display: block;
+        border-radius: 0;
+    }
+.computer-container {
+width: 200px; height: 200px; position: relative; margin: 0 auto 20px;
+}
+    .monitor {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 160px; /* Adjusted to fit container */
+        height: 120px; /* Adjusted to fit container */
+        background: #555;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 20px rgba(0,0,0,0.2);
+    }
+    .screen {
+        position: absolute;
+        top: 8.5%;
+        left: 5.5%;
+        width: 85%;
+        height: 75%;
+        background: #000;
+        border-radius: 4px;
+        box-shadow: inset 0 0 8px rgba(255,255,255,0.3);
+        border: 2px solid #444;
+        overflow: hidden;
+    }
+    .stand {
+        position: absolute;
+        top: 100%;
+        left: 40%;
+        width: 20%;
+        height: 20%; 
+        background: linear-gradient(#666, #444);
+        border-radius: 2px 2px 0 0;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 -2px 4px rgba(255,255,255,0.1);
+    }
+    .base {
+        position: absolute;
+        top: 120%; 
+        left: 15%;
+        width: 70%;
+        height: 4%;
+        background: linear-gradient(#666, #444);
+        border-radius: 2px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 -2px 4px rgba(255,255,255,0.1);
+    }
+    .keyboard {
+        position: absolute;
+        top: 140px; 
+        left: 50%;
+        transform: translateX(-50%) perspective(200px) rotateX(40deg) skewX(0deg);
+        width: 140px; 
+        height: 40px; 
+        background: linear-gradient(#444 60%, #333 100%);
+        border-radius: 4px 4px 6px 6px;
+        box-shadow: 0 3px 0 #000;
+    }
+    .keyboard::before {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        right: 2px;
+        bottom: 2px;
+        background: linear-gradient(#333 40%, #222 100%);
+        border-radius: 2px 2px 3px 3px;
+    }
+    .buttons {
+        position: absolute;
+        top: 8px; 
+        left: 50%;
+        transform: translate(-50%,0) rotateX(0deg);
+        display: flex;
+        gap: 4px;
+    }
+    .button {
+        width: 30px; 
+        height: 24px; 
+        background: linear-gradient(#555 10%, #444 90%);
+        border-radius: 6px;
+        box-shadow: 0 1px 1px #000;
+        cursor: pointer;
+        position: relative; 
+    }
+    .button::after {
+        content: attr(data-label);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #fff;
+        font: 12px Arial, sans-serif; 
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        white-space: nowrap; 
+    }
+@media (hover: hover) {
+    .audio-trigger:hover {
+        transform: scale(1.025);
+    }
+}
+        .appear, table {
+  flex-direction: column;
+  margin-inline: 1vw;
+  width: calc(100% - 2vw); 
+  margin-top:5vh;
+  margin-bottom:5vh;
+        }
+        table {
+    border-collapse: collapse;
+    width: 100%;
+}
+table td:first-child {
+    width: 30%;
+    padding: 10px;
+    overflow: hidden; 
+}
+table td:last-child {
+    width: 70%;
+    padding: 10px;
+}
+table img {
+    width: 100%;
+    height: auto;
+    border-radius: 50%;
+    object-fit: cover;
+}
+        .appear:nth-child(odd) {
+  align-items: flex-start; 
+  text-align: left;
+}
+.appear:nth-child(even) {
+  align-items: flex-end; 
+  text-align: right;
+}
+.appear.centered {
+  align-items: center;
+  text-align: center;
+}
+.chat-input::placeholder {
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out;
+}
+.chat-input:disabled::placeholder {
+    opacity: 0;
+}
+header {
+    background: grey;
+    color: white;
+    padding: 7rem 0;
+    height: 150px; 
+    display: flex;
+    align-items: center; 
+    justify-content: center; 
+}
+model-viewer {
+    max-width: 200px;
+    min-height: 250px;
+    align-self: center;
+    margin-left: 10px;
+}
+        .header-container {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+.logo-group {
+    display: flex;
+    align-items: center; 
+    position: relative;
+    height: 100%; 
+}
+        .main-letters {
+            display: flex;
+            align-items: flex-start;
+        }
+        .letter-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .science-letter {
+            font-weight: 900;
+            font-size: 9rem;
+            color: #b80000;
+            line-height: 0.7;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+        }
+        .science-ience {
+            font-weight: 600;
+            font-size: 6rem; 
+            color: black;
+            line-height: 0.7;
+        }
+        .subscript {
+            font-weight: 100;
+            font-size: 1.8rem;
+            color: #b80000;
+            position: absolute;
+            bottom: -2.5rem;
+            white-space: nowrap;
+        }
+        .mart {
+            left: 0;
+        }
+        .ities {
+            right: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        footer {
+            background: black;
+            color: white;
+            padding: 1.5rem;
+            margin-top: auto;
+        }
+        .close-chat-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 50px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        .close-chat-button:hover {
+            color: #ccc;
+        }
+        .chat-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 500px;
+            height: 500px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            z-index: 1001;
+            transition: all 0.3s ease;
+        }
+.chat-toggle-button,
+.contact-toggle-button {
+    right: 20px;
+    width: 70px;
+    height: 70px;
+    position: fixed;
+    opacity: 0.9;
+    background-color: #007bff;
+    border-radius: 50%;
+    box-shadow: 3px 3px 4px rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.4s ease-in-out;
+    border: none;
+    cursor: pointer;
+    z-index: 1000;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+     padding: 15px;
+    margin: 0;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.chat-toggle-button::after,
+.contact-toggle-button::after {
+    content: '';
+    position: absolute;
+    top: -15px;
+    left: -15px;
+    right: -15px;
+    bottom: -15px;
+}
+.chat-toggle-button:hover,
+.contact-toggle-button:hover {
+    width: 65px;
+    height: 65px;
+    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    opacity: 1;
+}
+.chat-toggle-button {
+    bottom: 20px;
+}
+.contact-toggle-button {
+    bottom: 100px;
+}
+.button-icon {
+    height: 45px;
+    transition: all 0.4s ease-in-out;
+    filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.2));
+}
+        .chat-header {
+            font-weight: 600;
+            background-color: #202123;
+            color: #fff;
+            padding: 15px;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .chat-history {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .message.user {
+            align-items: flex-end;
+        }
+        .message.bot {
+            align-items: flex-start;
+        }
+        .message-text {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 10px;
+            word-wrap: break-word;
+            font-size: 14px;
+        }
+        .message.user .message-text {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .message.bot .message-text {
+            background-color: #e5e5e5;
+            color: #000;
+        }
+.chat-input-container {
+            display: flex;
+            padding: 15px;
+            gap: 8px;
+            border-top: 1px solid #e5e5e5;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #e5e5e5;
+            border-radius: 5px;
+            outline: none;
+        }
+        .chat-input:focus {
+            border-color: #007bff;
+        }
+        .send-button {
+            padding: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+.loader {
+            display: none;
+        }
+@media (min-aspect-ratio: 1/1) and (min-width: 639px) {
+    .container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+    .container > table {
+        flex: 0 0 48%;
+        margin: 5vh 0;
+    }
+}
+@media (max-aspect-ratio: 1/1), (max-width: 638px) {
+table td:first-child {
+width: 37.5%;
+}
+table td:last-child {
+width: 62.5%;
+}
+.chat-container {
+width: calc(100% - 20px); height: 80vh; right: 10px; left: 10px; bottom: 20px; margin: 0 auto; box-sizing: border-box;
+}
+.chat-toggle-button, .contact-toggle-button {
+left: calc(100% - 60px - 20px); width: 60px; height: 60px; bottom: 20px;
+}
+.contact-toggle-button {
+bottom: 100px;
+}
+.button-icon {
+height: 30px;
+}
+.science-letter {
+font-size: 15vw;
+}
+.science-ience {
+font-size: 12vw;
+}
+.subscript {
+font-size: 4vw; bottom: -5vh;
+}
+header {
+padding: 2rem 0; height: 25vh; min-height: auto;
+}
+model-viewer {
+max-width: 30vw !important; min-height: 35vh !important;
+}
+.logo-group {
+height: auto !important; gap: 0.5rem; justify-content: center;
+}
+.main-letters {
+gap: 0.3rem;
+}
+}
+</style>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-container">
+                <div class="logo-group">
+                    <div class="main-letters">
+                        <div class="letter-container">
+                            <div class="science-letter">S</div>
+                            <div class="subscript mart">mart</div>
+                        </div>
+                        <div class="letter-container">
+                            <div class="science-letter">C</div>
+                            <div class="subscript ities">ities'</div>
+                        </div>
+                    </div>
+                    <div class="science-ience">ience</div>
+                    <model-viewer 
+                        src="https://nd4s.github.io/ai/files/3d_comp.glb" 
+                        camera-controls
+                        disable-zoom
+                        camera-orbit="50deg 75deg 2.7m">
+                    </model-viewer>
+                </div>
+            </div>
+        </div>
+    </header>
+     <main>
+        <div class="container">
+            <p class="appear">
+                Вітаємо на сторінці проєкту <b><span class="answer">«Розробка інструментів для розвитку смарт-інфраструктури розумних міст з урахуванням викликів війни та повоєнного відновлення України»</span></b> ( <i>ідентифікаційний номер теми - 25БП013-01М</i> ).
+            </p>
+<table class="appear">
+                <tr>
+                До нашої команди входять чудові люди, справжні фахівці своєї справи, а саме:</tr>
+            <tr><td><a href="https://youtu.be/qR4oAH_avwo" target="_blank" data-start="1" data-end="7"><img src="https://nd4s.github.io/ai/files/zayarniy.jpg"></a><td/><td><a href="https://youtu.be/qR4oAH_avwo" target="_blank" data-start="1" data-end="7">
+                <span class="answer"><b><span class="audio-trigger"  ><i>Олег Заярний</i> ▶️</span></b><br>член Науково-консультативної ради при Верховному Суді, доктор юридичних наук, професор
+                        </span></a></td></tr>
+            <tr><td><a href="https://youtu.be/fT-lkxmZO_8" target="_blank" data-start="1" data-end="7"><img src="https://nd4s.github.io/ai/files/oryshuk.jpg"></a><td/><td><a href="https://youtu.be/fT-lkxmZO_8" target="_blank" data-start="1" data-end="7">
+                <span class="answer"><b><span class="audio-trigger"  ><i>Василь Орищук</i> ▶️</span></b><br>член Керівної ради Спілки молодих держслужбовців України, доктор філософії з публічного управління</span>
+            </span></a></td></tr>
+            <tr><td><a href="https://youtu.be/1bzyZJnNMgQ" target="_blank" data-start="741" data-end="749"><img src="https://nd4s.github.io/ai/files/krak.jpg"></a><td/><td><a href="https://youtu.be/1bzyZJnNMgQ" target="_blank" data-start="741" data-end="749">
+                <span class="answer"><b><span class="audio-trigger"  ><i>Юрій Крак</i> ▶️</span></b><br>доктор фізико-математичних наук, понад 20 років спеціалізується на розробці АІ-сервісів
+            </span></a></td></tr>
+</table>
+<table class="appear">
+            <tr><td><a href="https://youtu.be/gQojGqfs4Ok" target="_blank" data-start="198" data-end="205"><img src="https://nd4s.github.io/ai/files/pochaievets.jpg"></a><td/><td><a href="https://youtu.be/gQojGqfs4Ok" target="_blank" data-start="198" data-end="205">
+                <span class="answer"><b><span class="audio-trigger"  ><i>Олена Почаєвець</i> ▶️</span></b><br>завідувач відділу проєктної діяльності НДЧ КНУТШ, кандидат географічних наук
+            </span></a></td></tr>
+            <tr><td><a href="https://youtu.be/JcgHfiabsqs" target="_blank" data-start="1" data-end="7"><img src="https://nd4s.github.io/ai/files/ostapenko.jpg"></a><td/><td><a href="https://youtu.be/JcgHfiabsqs" target="_blank" data-start="1" data-end="7">
+                <span class="answer"><b><span class="audio-trigger"  ><i>Роман Остапенко</i> ▶️</span></b><br>Голова Ради молодих вчених КНУТШ, член наукових рад КНУТШ, кандидат фізико-математичних наук
+</span></a></td></tr>
+            <tr><td><a href="https://youtu.be/PC4GsyAJIV4" target="_blank" data-audio-src="https://nd4s.github.io/ai/files/katerynych.mp3"><img src="https://nd4s.github.io/ai/files/katerynych.jpg"></a><td/><td><a href="https://youtu.be/PC4GsyAJIV4" target="_blank" data-audio-src="https://nd4s.github.io/ai/files/katerynych.mp3">
+    <span class="answer"><b><span class="audio-trigger"><i>Петро Катеринич</i> ▶️</span></b><br>член Національної спілки журналістів України, доктор філософії з журналістики
+</span></a></td></tr></table>
+<table class="appear">
+            <tr><td><a href="https://youtu.be/m84XKvndI9k" target="_blank" data-start="4754" data-end="4761"><img src="https://nd4s.github.io/ai/files/karlash.jpg"></a><td/><td><a href="https://youtu.be/m84XKvndI9k" target="_blank" data-start="4754" data-end="4761">
+                <span class="answer"><b><span class="audio-trigger"  ><i>Богдан Карлаш</i> ▶️</span></b><br>аспірант кафедри Комп'ютерної інженерії факультету РЕКС КНУТШ</span></a></td></tr>
+            <tr><td><a href="https://youtu.be/_ZuJ7H4bFsg" target="_blank" data-start="1" data-end="7"><img src="https://nd4s.github.io/ai/files/chuian.jpg"></a><td/><td><a href="https://youtu.be/_ZuJ7H4bFsg" target="_blank" data-start="1" data-end="7">
+                <span class="answer"><b><span class="audio-trigger"  ><i>Андрій Чуян</i> ▶️</span></b><br>від вересня 2022 займається АІ технологіями, раніше екскурсовод у Software and Computer Museum
+                </span></a></td></tr>
+                <tr><td><a href="https://youtu.be/Gr_X2LejEiY" target="_blank" data-audio-src="https://nd4s.github.io/ai/files/tesyolkina.mp3"><img src="https://nd4s.github.io/ai/files/tesyolkina.jpg"></a><td/><td><a href="https://youtu.be/Gr_X2LejEiY" target="_blank" data-audio-src="https://nd4s.github.io/ai/files/tesyolkina.mp3">
+                <span class="answer"><b><span class="audio-trigger"  ><i>Тетяна Тесьолкіна</i> ▶️</span></b><br>учасниця робочої групи з розробки Екологічної стратегії Києва, доктор філософії з природничих наук 
+                </span></a></td></tr>
+            </table>
+            <p class="appear">
+                Наша проєктна група має амбітні плани на співпрацю з Міністерством цифрової трансформації, територіальними громадами та загалом поширення свого досвіду для будь-кого з бажаючих у вигляді дружнього до користувачів програмного забезпечення.
+            </p>
+<div class="appear" id="results">
+    <div class="results-header">
+        <div>Деякі з результатів нашої роботи буде наведено нижче:</div>
+    </div>
+    <div class="results-row">
+        <div class="result-item">
+            <div class="book">
+  <div class="page">
+    <div class="front cover">
+      <p></p>
+    </div>
+    <div class="back">
+    </div>
+  </div>
+  <div class="page">
+    <div class="front">
+      <p></p>
+    </div>
+    <div class="back">
+      <p></p>
+    </div>
+  </div>
+  <div class="page">
+    <div class="front">
+      <p></p>
+    </div>
+    <div class="back">
+      <p></p>
+    </div>
+  </div>
+  <div class="page">
+    <div class="front">
+    </div>
+    <div class="back cover">
+      <p></p>
+    </div>
+  </div>
+</div>
+            <a href="https://drive.google.com" target="_blank" class="answer"><b><i>Публікації</i> 📚️</b><br>тези конференцій, статті у Scopus, Web of Science та будь-яких індексованих виданнях</a>
+        </div>
+        <div class="result-item">
+            <div class="computer-container">
+                <div class="monitor">
+                    <div class="screen"><canvas id="gameCanvas"></canvas></div>
+                    <div class="stand"></div>
+                    <div class="base"></div>
+                </div>
+                <div class="keyboard">
+                    <div class="buttons">
+                        <div class="button" data-label="‹" id="leftBtn"></div>
+                        <div class="button" data-label="›" id="rightBtn"></div>
+                        <div class="button" data-label="Enter" id="enterBtn"></div>
+                    </div>
+                </div>
+            </div>
+            <span class="answer"><b><i>Програми</i> 🖥️</b><br>будь-які програмні розробки у вигляді як готових додатків та плагінів, так і сирцевого коду</span>
+        </div>
+        <div class="result-item">
+<div class="crane-container">
+    <div class="vertical-stick">
+        <div class="horizontal-stick"></div>
+        <div class="base-crane"></div>
+    </div>
+    <canvas class="rope-canvas"></canvas>
+</div>
+            <a href="https://website.com/file.pdf" target="_blank" class="answer"><b><i>Впровадження</i> 🔧</b><br>приклади використання наших напрацювань у держслужбі, бізнесі, повсякденному житті</a>
+        </div>
+    </div>
+</div>
+        </div>
+            <div id="player"></div>
+    </main>
+    <footer>
+        <div class="container">
+            <p>&copy; 2025. Розробка інструментів для розвитку смарт-інфраструктури розумних міст</p>
+        </div>
+    </footer>
+    <div class="chat-container">
+        <div class="chat-header">
+            АІ - чат
+            <button class="close-chat-button">×</button>
+        </div>
+        <div class="chat-history" id="chatHistory">
+            <div class="message bot">
+                <div class="message-text">Є питання, а шукати не готові? 🔍<br>Можете запитати мене, ШІ! 🧠<br><br><b>Звертаю Вашу увагу:</b><br>Один запит - одне питання 📌<br>Інколи я можу помилятися 🧩<br><br>Але я буду радий допомогти!</div>
+            </div>
+        </div>
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" id="inputText" placeholder="Напишіть Ваш запит...">
+            <button class="send-button" onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+    <a href="tel:+1234567890" class="contact-toggle-button">
+    <svg class="button-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+    </svg>
+</a>
+<button class="chat-toggle-button">
+    <svg viewBox="-150 -170 888 888">
+  <path d="M208 0c-29.9 0-54.7 20.5-61.8 48.2-.8 0-1.4-.2-2.2-.2-35.3 0-64 28.7-64 64 0 4.8.6 9.5 1.7 14C52.5 138 32 166.6 32 200c0 12.6 3.2 24.3 8.3 34.9C16.3 248.7 0 274.3 0 304c0 33.3 20.4 61.9 49.4 73.9-.9 4.6-1.4 9.3-1.4 14.1 0 39.8 32.2 72 72 72 4.1 0 8.1-.5 12-1.2 9.6 28.5 36.2 49.2 68 49.2 39.8 0 72-32.2 72-72V64c0-35.3-28.7-64-64-64zm368 304c0-29.7-16.3-55.3-40.3-69.1 5.2-10.6 8.3-22.3 8.3-34.9 0-33.4-20.5-62-49.7-74 1-4.5 1.7-9.2 1.7-14 0-35.3-28.7-64-64-64-.8 0-1.5.2-2.2.2C422.7 20.5 397.9 0 368 0c-35.3 0-64 28.6-64 64v376c0 39.8 32.2 72 72 72 31.8 0 58.4-20.7 68-49.2 3.9.7 7.9 1.2 12 1.2 39.8 0 72-32.2 72-72 0-4.8-.5-9.5-1.4-14.1 29-12 49.4-40.6 49.4-73.9z"/>
+</svg>
+</button>
+<script>
+// AI CHAT START
+let isProcessing=false,pipe=null,embeddingsLoading=false,answers=[],animationInterval=null;
+document.addEventListener('DOMContentLoaded',()=>{
+    // Predefined answers list
+    answers=[
+        "I'm sorry, I don't know the answer or didn't understand the question",
+        "Перепрошую, я не знаю відповідь або не зрозумів питання",
+        "My work is based on embeddings. With their help, I find the most appropriate answer and address it to you",
+        "В основі моєї роботи лежать ембедінги (embeddings). Із їх допомогою я знаходжу найбільш підходящу відповідь та адресую її Вам",
+        "Назва проєкту: «Розробка інструментів для розвитку смарт-інфраструктури розумних міст з урахуванням викликів війни та повоєнного відновлення України» (ідентифікаційний номер теми - 25БП013-01М).",
+        "Олег Заярний — член Науково-консультативної ради при Верховному Суді, доктор юридичних наук, професор.",
+        "Василь Орищук — член Керівної ради Спілки молодих держслужбовців України, доктор філософії з публічного управління.",
+        "Юрій Крак — доктор фізико-математичних наук, понад 20 років спеціалізується на розробці АІ-сервісів.",
+        "Олена Почаєвець — завідувач відділу проєктної діяльності НДЧ КНУТШ, кандидат географічних наук.",
+        "Роман Остапенко — Голова Ради молодих вчених КНУТШ, член наукових рад КНУТШ, кандидат фізико-математичних наук.",
+        "Петро Катеринич — член Національної спілки журналістів України, доктор філософії з журналістики.",
+        "Богдан Карлаш — аспірант кафедри Комп'ютерної інженерії факультету РЕКС КНУТШ.",
+        "Андрій Чуян — від вересня 2022 займається АІ технологіями, раніше екскурсовод у Software and Computer Museum.",
+        "Тетяна Тесьолкіна — учасниця робочої групи з розробки Екологічної стратегії Києва, доктор філософії з природничих наук.",
+        "Наша проєктна група має плани на співпрацю з Міністерством цифрової трансформації, територіальними громадами та розробку ПЗ.",
+        "Результати роботи включають Публікації (Scopus, Web of Science), Програми (готові додатки та сирцевий код) та Впровадження в держслужбу та бізнес."
+    ];
+});
+
+async function initializeEmbeddings(){embeddingsLoading=true;const{pipeline}=await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.0');pipe=await pipeline('feature-extraction','Xenova/paraphrase-multilingual-MiniLM-L12-v2',{quantized:true,backend:'cpu'});embeddingsLoading=false;openChat();}function openChat(){const chat=document.querySelector('.chat-container'),toggleButton=document.querySelector('.chat-toggle-button');chat.style.display='flex';toggleButton.style.display='none';}function startEllipsisAnimation(){const frames=['.', '..', '...'];let currentFrame=0;const button=document.querySelector('.chat-toggle-button');button.innerHTML=frames[currentFrame];animationInterval=setInterval(()=>{currentFrame=(currentFrame+1)%frames.length;button.textContent=frames[currentFrame];},500);}function stopEllipsisAnimation(){animationInterval&&clearInterval(animationInterval);const button=document.querySelector('.chat-toggle-button');button.innerHTML=`<svg viewBox="-150 -170 888 888"><path d="M208 0c-29.9 0-54.7 20.5-61.8 48.2-.8 0-1.4-.2-2.2-.2-35.3 0-64 28.7-64 64 0 4.8.6 9.5 1.7 14C52.5 138 32 166.6 32 200c0 12.6 3.2 24.3 8.3 34.9C16.3 248.7 0 274.3 0 304c0 33.3 20.4 61.9 49.4 73.9-.9 4.6-1.4 9.3-1.4 14.1 0 39.8 32.2 72 72 72 4.1 0 8.1-.5 12-1.2 9.6 28.5 36.2 49.2 68 49.2 39.8 0 72-32.2 72-72V64c0-35.3-28.7-64-64-64zm368 304c0-29.7-16.3-55.3-40.3-69.1 5.2-10.6 8.3-22.3 8.3-34.9 0-33.4-20.5-62-49.7-74 1-4.5 1.7-9.2 1.7-14 0-35.3-28.7-64-64-64-.8 0-1.5.2-2.2.2C422.7 20.5 397.9 0 368 0c-35.3 0-64 28.6-64 64v376c0 39.8 32.2 72 72 72 31.8 0 58.4-20.7 68-49.2 3.9.7 7.9 1.2 12 1.2 39.8 0 72-32.2 72-72 0-4.8-.5-9.5-1.4-14.1 29-12 49.4-40.6 49.4-73.9z"/></svg>`;}document.querySelector('.chat-toggle-button').addEventListener('click',()=>{if(!pipe&&!embeddingsLoading){startEllipsisAnimation();initializeEmbeddings().finally(stopEllipsisAnimation);}else if(pipe)openChat();});document.querySelector('.close-chat-button').addEventListener('click',()=>{const chat=document.querySelector('.chat-container'),toggleButton=document.querySelector('.chat-toggle-button');chat.style.display='none';toggleButton.style.display='flex';});document.getElementById('inputText').addEventListener('keypress',e=>{if(e.key==='Enter')sendMessage();});async function getEmbedding(text){const output=await pipe(text,{pooling:'mean',normalize:true});return Array.from(output.data);}function cosineSimilarity(a,b){const dot=a.reduce((sum,val,i)=>sum+val*b[i],0),magA=Math.sqrt(a.reduce((sum,val)=>sum+val*val,0)),magB=Math.sqrt(b.reduce((sum,val)=>sum+val*val,0));return dot/(magA*magB);}function calculatePauseDuration(inputText){return Math.min((inputText.length/15)*1000,3000);}function checkForSevenChars(inputText){const sequenceRegex=/(.)\1{6}/,sequenceMatch=inputText.match(sequenceRegex);if(sequenceMatch)return sequenceMatch[0];if(inputText.length>=7){let bestMatch=null,maxLength=0;for(const answer of answers){let longestMatch='';for(let i=0;i<inputText.length;i++){for(let j=0;j<answer.length;j++){let k=0;while(i+k<inputText.length&&j+k<answer.length&&inputText[i+k]===answer[j+k]){longestMatch+=inputText[i+k];k++;}if(longestMatch.length>=7&&longestMatch.length>maxLength){maxLength=longestMatch.length;bestMatch=answer;}longestMatch='';}}}return bestMatch;}return null;}async function findBestMatch(inputText){const directMatch=checkForSevenChars(inputText);if(directMatch){await new Promise(resolve=>setTimeout(resolve,calculatePauseDuration(inputText)));addBotMessage(directMatch);return;}if(!pipe)return alert('Embeddings still loading...');const loader=document.createElement('div');loader.className='loader';const loadingMessage=document.createElement('div');loadingMessage.classList.add('message','bot');loadingMessage.innerHTML=`<div class="message-text"></div>`;loadingMessage.querySelector('.message-text').appendChild(loader);document.getElementById('chatHistory').appendChild(loadingMessage);try{const inputEmbedding=await getEmbedding(inputText);let bestScore=-1,bestAnswer='';for(const answer of answers){const answerEmbedding=await getEmbedding(answer);const score=cosineSimilarity(inputEmbedding,answerEmbedding);if(score>bestScore){bestScore=score;bestAnswer=answer;}}await new Promise(resolve=>setTimeout(resolve,calculatePauseDuration(inputText)));addBotMessage(bestAnswer);}catch(error){console.error(error);addBotMessage("Помилка!");}finally{loadingMessage.remove();}}function addUserMessage(text){const chatHistory=document.getElementById('chatHistory'),message=document.createElement('div');message.classList.add('message','user');message.innerHTML=`<div class="message-text">${text}</div>`;chatHistory.appendChild(message);chatHistory.scrollTop=chatHistory.scrollHeight;}function addBotMessage(text){const chatHistory=document.getElementById('chatHistory'),message=document.createElement('div');message.classList.add('message','bot');message.innerHTML=`<div class="message-text"></div>`;chatHistory.appendChild(message);let index=0;const interval=setInterval(()=>{if(index<text.length){message.querySelector('.message-text').textContent+=text[index];index++;}else{clearInterval(interval);const inputField=document.getElementById('inputText'),sendButton=document.querySelector('.send-button');inputField.disabled=false;sendButton.disabled=false;isProcessing=false;inputField.placeholder=inputField.getAttribute('data-placeholder');inputField.focus();}},50);chatHistory.scrollTop=chatHistory.scrollHeight;}async function sendMessage(){if(isProcessing)return;const inputText=document.getElementById('inputText').value.trim();if(!inputText)return;const inputField=document.getElementById('inputText'),sendButton=document.querySelector('.send-button');inputField.disabled=true;sendButton.disabled=true;isProcessing=true;inputField.setAttribute('data-placeholder',inputField.placeholder);inputField.placeholder='';addUserMessage(inputText);document.getElementById('inputText').value='';try{await findBestMatch(inputText);}catch(error){console.error(error);addBotMessage("Помилка!");}}
+// AI CHAT END
+//AUDIO START
+window.addEventListener("scroll",()=>{window.pageYOffset||document.documentElement.scrollTop;let e=window.innerHeight;document.querySelectorAll(".appear").forEach(t=>{let r=t.getBoundingClientRect(),a=r.top<e&&r.bottom>.3*e;t.style.opacity=a?1:0,t.style.transform=a?"translateX(0)":"translateX(50px)",t.style.transition="opacity 0.4s ease-in-out, transform 0.4s ease-in-out"})});var player,tag=document.createElement("script");tag.src="https://www.youtube.com/iframe_api";var firstScriptTag=document.getElementsByTagName("script")[0];firstScriptTag.parentNode.insertBefore(tag,firstScriptTag);var currentVideoId="",currentStart=0,currentEnd=0;function onYouTubeIframeAPIReady(){player=new YT.Player("player",{height:"0",width:"0",videoId:"",playerVars:{autoplay:0,controls:0,modestbranding:1,rel:0},events:{onReady:onPlayerReady}})}function onPlayerReady(e){e.target.mute()}function isMobile(){return/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)}document.querySelectorAll(".audio-trigger").forEach(e=>{if(isMobile())return;let t=e.closest('a[href^="https://youtu.be/"]');if(!t)return;e.style.cursor="pointer";let r=t.dataset.audioSrc,a;e.addEventListener("mouseenter",function(){if(r)(a=new Audio(r)).play();else{let e=new URL(t.href);currentVideoId=e.pathname.split("/").pop(),currentStart=parseInt(t.dataset.start),currentEnd=parseInt(t.dataset.end),player.loadVideoById({videoId:currentVideoId,startSeconds:currentStart,endSeconds:currentEnd}),player.unMute(),player.playVideo()}}),e.addEventListener("mouseleave",function(){r?(a.pause(),a.currentTime=0):(player.pauseVideo(),player.seekTo(currentStart))})});
+//AUDIO END
+//PONG START
+const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d'),screenDiv=document.querySelector('.screen'),paddleHeight=8,paddleWidth=40;let aiPaddleX=(canvas.width-paddleWidth)/2,playerPaddleX=(canvas.width-paddleWidth)/2,ballX=playerPaddleX+paddleWidth/2,ballY=canvas.height-paddleHeight-20,ballSpeedX=1,ballSpeedY=-1,playerScore=0,aiScore=0,gameRunning=false,gameEnded=false,autoStartTimeout,leftPressed=false,rightPressed=false;const scanlines=document.createElement('canvas'),scanCtx=scanlines.getContext('2d');scanlines.width=canvas.width;scanlines.height=canvas.height;scanCtx.fillStyle='rgba(0,255,0,0.05)';for(let y=0;y<scanlines.height;y+=2)scanCtx.fillRect(0,y,scanlines.width,1);const leftBtn=document.getElementById('leftBtn'),rightBtn=document.getElementById('rightBtn'),enterBtn=document.getElementById('enterBtn');function toggleGame(){if(gameEnded){playerScore=0;aiScore=0;gameEnded=false;resetBall()}gameRunning=!gameRunning;if(gameRunning)gameLoop()}function gameLoop(){if(!gameRunning||gameEnded)return;playerPaddleX+=(leftPressed?-5:0)+(rightPressed?5:0);playerPaddleX=Math.max(0,Math.min(canvas.width-paddleWidth,playerPaddleX));aiPaddleX+=(ballX-(aiPaddleX+paddleWidth/2))*.04+(Math.random()<.02?(Math.random()-.5)*20:0);aiPaddleX=Math.max(0,Math.min(canvas.width-paddleWidth,aiPaddleX));ballX+=ballSpeedX;ballY+=ballSpeedY;if(ballX<0||ballX>canvas.width)ballSpeedX=-ballSpeedX;if(ballY<=paddleHeight&&ballX>aiPaddleX&&ballX<aiPaddleX+paddleWidth)ballSpeedY=-ballSpeedY;if(ballY>=canvas.height-paddleHeight&&ballX>playerPaddleX&&ballX<playerPaddleX+paddleWidth)ballSpeedY=-ballSpeedY;if(ballY<0){playerScore++;if(playerScore>=5)gameEnded=true;resetBall()}if(ballY>canvas.height){aiScore++;if(aiScore>=5)gameEnded=true;resetBall()}draw();requestAnimationFrame(gameLoop)}function resetBall(){ballX=playerPaddleX+paddleWidth/2;ballY=canvas.height-paddleHeight-20;ballSpeedX=1*(Math.random()>.5?1:-1);ballSpeedY=-1}function draw(){ctx.fillStyle='black';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='rgba(0,255,0,0.1)';ctx.fillRect(0,0,canvas.width,canvas.height);if(!gameEnded){ctx.fillStyle='#0f0';ctx.fillRect(aiPaddleX,0,paddleWidth,paddleHeight);ctx.fillRect(playerPaddleX,canvas.height-paddleHeight,paddleWidth,paddleHeight);ctx.beginPath();ctx.arc(ballX,ballY,3,0,2*Math.PI);ctx.fill();ctx.font=`${Math.min(12,canvas.width/10)}px "Courier New",monospace`;ctx.textAlign='center';ctx.fillText(`USER: ${playerScore}`,canvas.width/2,canvas.height-10);ctx.fillText(`AI: ${aiScore}`,canvas.width/2,20)}ctx.drawImage(scanlines,0,0);if(gameEnded){ctx.font=`${Math.min(12,canvas.width/10)}px "Courier New",monospace`;ctx.fillStyle='#0f0';ctx.fillText('Press Enter',canvas.width/2,canvas.height/2-10);ctx.fillText('to play',canvas.width/2,canvas.height/2+10)}ctx.imageSmoothingEnabled=false}function resizeCanvas(){canvas.width=screenDiv.clientWidth;canvas.height=screenDiv.clientHeight;resetBall();draw()}leftBtn.addEventListener('mousedown',()=>{leftPressed=true});leftBtn.addEventListener('mouseup',()=>{leftPressed=false});leftBtn.addEventListener('mouseleave',()=>{leftPressed=false});leftBtn.addEventListener('touchstart',e=>{e.preventDefault();leftPressed=true});leftBtn.addEventListener('touchend',e=>{e.preventDefault();leftPressed=false});rightBtn.addEventListener('mousedown',()=>{rightPressed=true});rightBtn.addEventListener('mouseup',()=>{rightPressed=false});rightBtn.addEventListener('mouseleave',()=>{rightPressed=false});rightBtn.addEventListener('touchstart',e=>{e.preventDefault();rightPressed=true});rightBtn.addEventListener('touchend',e=>{e.preventDefault();rightPressed=false});enterBtn.addEventListener('click',()=>{clearTimeout(autoStartTimeout);toggleGame()});enterBtn.addEventListener('touchend',e=>{e.preventDefault();clearTimeout(autoStartTimeout);toggleGame()});document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')leftPressed=true;if(e.key==='ArrowRight')rightPressed=true;if(e.key==='Enter'){clearTimeout(autoStartTimeout);toggleGame()}});document.addEventListener('keyup',e=>{if(e.key==='ArrowLeft')leftPressed=false;if(e.key==='ArrowRight')rightPressed=false});resizeCanvas();window.addEventListener('resize',resizeCanvas);autoStartTimeout=setTimeout(()=>{if(!gameRunning&&!gameEnded)toggleGame()},5000);
+// PONG END
+// BUTTONS START
+document.querySelectorAll(".chat-toggle-button, .contact-toggle-button").forEach(t=>{t.style.touchAction="manipulation",t.addEventListener("touchstart",e=>{e.preventDefault(),t.style.transform="scale(0.95)",t.style.opacity="0.9"},{passive:!1}),t.addEventListener("touchend",e=>{e.preventDefault(),t.style.transform="scale(1)",t.style.opacity="1",t.click()},{passive:!1}),t.addEventListener("click",e=>{t.disabled||toggleChat()})});
+//BUTTONS END
+//BOOK START
+const flipBook=(a)=>{a.style.setProperty("--c",0);const t=a.querySelectorAll(".page"),n=t.length;let o=!1,c, l,s=!1,u=new AbortController;const d=async()=>{if(o){const r=u.signal;try{if(!c)await new Promise(e=>setTimeout(e,5e3));for(let e=0;e<=n;e++){if(r.aborted)throw new Error("Aborted");a.style.setProperty("--c",e),await new Promise(e=>{const t=setTimeout(e,3e3);r.addEventListener("abort",()=>clearTimeout(t))})}for(let e=n;e>=0;e--){if(r.aborted)throw new Error("Aborted");a.style.setProperty("--c",e),await new Promise(e=>{const t=setTimeout(e,500);r.addEventListener("abort",()=>clearTimeout(t))})}}catch{}}};c=setTimeout(d,5e3);t.forEach((e,r)=>{e.style.setProperty("--i",r);let i,f;const p=h=>{if(h.preventDefault(),h.target.closest("a"))return;const m=h.target.closest(".back"),g=m?-1:1,v=parseInt(a.style.getPropertyValue("--c"))||0,b=Math.max(0,Math.min(v+g,n));a.style.setProperty("--c",b),b===n&&(s=!0),b===0&&s&&(o=!1),u.abort(),u=new AbortController,clearTimeout(c),o&&(c=setTimeout(d,1e4)),i=setTimeout(()=>{f=setInterval(()=>{const h=parseInt(a.style.getPropertyValue("--c"))||0,m=Math.max(0,Math.min(h+g,n));m!==h?a.style.setProperty("--c",m):clearInterval(f)},100)},500);const y=()=>{clearTimeout(i),clearInterval(f),"touchstart"===h.type?(e.removeEventListener("touchend",y),e.removeEventListener("touchcancel",y)):(e.removeEventListener("mouseup",y),e.removeEventListener("mouseleave",y))};"touchstart"===h.type?(e.addEventListener("touchend",y),e.addEventListener("touchcancel",y)):(e.addEventListener("mouseup",y),e.addEventListener("mouseleave",y))};e.addEventListener("mousedown",p),e.addEventListener("touchstart",p,{passive:!1})})};document.querySelectorAll(".book").forEach(flipBook);
+//BOOK END
+//CRANE START
+(t=>{let e=0,i=t.querySelector(".crane-container"),n=i.querySelector(".horizontal-stick"),s=i.querySelector(".rope-canvas"),o=s.getContext("2d"),r=!1,h=0,a=1,l=null,c,d,$={verticalHeight:0,horizontalWidth:190,baseWidth:100};function u(){let t=i.getBoundingClientRect();s.width=t.width,s.height=t.height,y()}class f{constructor(t,e,i=!1){this.x=t,this.y=e,this.oldY=e,this.isFixed=i}update(t){if(this.isFixed)return;let e=(this.y-this.oldY)*.95;this.oldY=this.y,this.y+=e+.05*t*t}constrain(){this.y>s.height&&(this.y=s.height)}}class g{constructor(t,e,i=8,n=50){this.points=[];let s=n/i;for(let o=0;o<i;o++)this.points.push(new f(t,e+o*s,0===o));this.segmentLength=s}update(t){this.points.forEach(e=>e.update(t));for(let e=0;e<3;e++)this.applyConstraints()}applyConstraints(){for(let t=0;t<this.points.length-1;t++){let e=this.points[t],i=this.points[t+1],n=i.x-e.x,s=i.y-e.y,o=Math.hypot(n,s),r=this.segmentLength-o,h=r/o/2;[e,i].forEach((t,e)=>{t.isFixed||(t.x+=n*h*(e?1:-1),t.y+=s*h*(e?1:-1))})}this.points.forEach(t=>t.constrain())}draw(){o.beginPath(),o.moveTo(this.points[0].x,this.points[0].y),this.points.slice(1).forEach(t=>o.lineTo(t.x,t.y)),o.strokeStyle="#444",o.stroke()}}function y(){let t=i.getBoundingClientRect(),e=t.width/2,n=$.verticalHeight/2;l=new g(e+$.horizontalWidth/2,n)}function p(){let t=parseFloat(n.style.transform.match(/rotate\(([-\d.]+)deg\)/)[1]);n.style.transition="transform 2s ease",n.style.transform=`translateX(-50%) rotate(${15===t?-5:15}deg)`,++e>=2&&clearInterval(c)}function _(t){o.clearRect(0,0,s.width,s.height);let e=i.getBoundingClientRect(),r=e.width/2,h=$.verticalHeight/2;if(l){let a=getComputedStyle(n),c=new DOMMatrix(a.transform),d=Math.atan2(c.b,c.a);l.points[0].x=r+Math.cos(d)*$.horizontalWidth/2,l.points[0].y=h+Math.sin(d)*$.horizontalWidth/2,l.update(16),l.draw();let u=l.points[l.points.length-1];o.beginPath(),o.arc(u.x,u.y,10,0,2*Math.PI),o.fillStyle="red",o.fill()}requestAnimationFrame(_)}function m(t){r=!0;let e=t.touches?t.touches[0].clientY:t.clientY,i=t.touches?t.touches[0].clientX:t.clientX;h=e,a=i<n.getBoundingClientRect().left+n.offsetWidth/2?-1:1,n.style.transition="none",clearInterval(c),clearTimeout(d)}function v(t){if(!r)return;let e=t.touches?t.touches[0].clientY:t.clientY,i=Math.min(Math.max((e-h)*a*.2,-5),15);n.style.transform=`translateX(-50%) rotate(${i}deg)`}function x(){r=!1,n.style.transition="transform 0.5s ease",n.style.transform="translateX(-50%) rotate(15deg)",d=setTimeout(()=>{e=0,c=setInterval(p,1e4)},2e4)}new ResizeObserver(u).observe(i),e=0,n.style.transform="translateX(-50%) rotate(15deg)",c=setInterval(p,1e4),n.addEventListener("mousedown",m),n.addEventListener("touchstart",m,{passive:!1}),t.addEventListener("mousemove",v),t.addEventListener("mouseup",x),t.addEventListener("touchmove",v,{passive:!1}),t.addEventListener("touchend",x),requestAnimationFrame(_)})(document);
+//CRANE END
+</script>
+</body>
+</html>
